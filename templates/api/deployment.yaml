@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polling-server
+  namespace: demo
+  labels:
+{{ include "polling.labels" . | indent 4 }}
+    component: api
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "polling.matchLabels" . | indent 6 }}
+      component: api
+  template:
+    metadata:
+      labels:
+{{ include "polling.matchLabels" . | indent 8 }}
+        component: api
+    spec:
+      restartPolicy: Always
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      containers:
+      - image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+        name: polling-server
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: api
+        env:
+        - name: DB_HOST
+          value: polling-database
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_NAME
+          value: polling_app
+        - name: DB_USER
+          value: polling
+        - name: DB_PASSWORD
+          value: polling321

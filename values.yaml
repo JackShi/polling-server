@@ -1,0 +1,47 @@
+expose:
+  type: ingress
+  ingress:
+    hosts:
+      ui: polling.aurotech.cn
+
+imagePullSecrets: 
+  - name: auro-registry
+
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    database:
+      existingClaim: ""
+      storageClass: "auro-nfs-storage"
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 1Gi
+
+api:
+  replicas: 1
+  image:
+    repository: registry.aurotech.cn/auro_demo/polling-app-server
+    tag: 64115dd
+    pullPolicy: IfNotPresent
+
+database:
+  # if external database is used, set "type" to "external"
+  # and fill the connection informations in "external" section
+  type: internal
+  internal:
+    image:
+      repository: mysql
+      tag: 5.7
+      pullPolicy: IfNotPresent
+    # 使用的数据库名称
+    database: "polling_app"
+    # 数据库用户
+    username: "polling"
+  external:
+    host: "192.168.0.1"
+    port: "3306"
+    username: "user"
+    password: "password"
+    database: "polling"
+  ## Additional deployment annotations
+  podAnnotations: {}

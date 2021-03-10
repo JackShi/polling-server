@@ -1,0 +1,19 @@
+{{- if eq .Values.expose.type "ingress" }}
+{{- $ingress := .Values.expose.ingress -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: polling-server-ingress
+  namespace: demo
+  labels:
+{{ include "polling.labels" . | indent 4 }}
+spec:
+  rules:
+  - host: {{ $ingress.hosts.ui }}
+    http:
+      paths:
+      - path: /api/
+        backend:
+          serviceName: polling-server
+          servicePort: api-port
+{{- end }}

@@ -1,0 +1,16 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: polling-server
+  namespace: demo
+  labels:
+{{ include "polling.labels" . | indent 4 }}
+    component: api
+spec:
+  selector:
+    app: polling-server
+  type:  ClusterIP
+  ports:
+  - name: api-port
+    port: 8080
+    targetPort:  api

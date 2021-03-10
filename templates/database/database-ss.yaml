@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "polling-database"
+  labels:
+{{ include "polling.labels" . | indent 4 }}
+    component: database
+spec:
+  serviceName: "polling-database"
+  selector:
+    matchLabels:
+{{ include "polling.matchLabels" . | indent 6 }}
+      component: database
+  template:
+    metadata:
+      labels:
+{{ include "polling.labels" . | indent 8 }}
+        component: database
+      annotations:
+        checksum/secret: 0dca1d01c873ff0ecf84c62a72663ba7c39d8445b4c36dffc404f87c6d9c69cd
+    spec:
+      containers:
+      - name: database
+        image: {{ .Values.database.internal.image.repository }}:{{ .Values.database.internal.image.tag }}
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: db
+            containerPort: 3306
+            protocol: TCP
+        livenessProbe:
+          exec:
+            command: ["mysqladmin", "ping"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command: ["mysql", "-h", "127.0.0.1", "-e", "SELECT 1"]
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          timeoutSeconds: 1
+        env:
+          - name: MYSQL_ALLOW_EMPTY_PASSWORD
+            value: "1"
+          - name: MYSQL_DATABASE
+            value: {{ .Values.database.internal.database }}
+          - name: MYSQL_USER
+            value: {{ .Values.database.internal.username }}
+        envFrom:
+          - secretRef:
+              name: "polling-database"
+        volumeMounts:
+        - name: database-data
+          mountPath: /var/lib/mysql
+          subPath: 
+  volumeClaimTemplates:
+  - metadata:
+      name: "database-data"
+      labels:
+{{ include "polling.labels" . | indent 8 }}
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "auro-nfs-storage"
+      resources:
+        requests:
+          storage: "1Gi"
